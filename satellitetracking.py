@@ -119,7 +119,7 @@ def main(args):
     # Build spacecraft instance
     molniyaSpaceCraft = EarthSatellite(molniya, None)
     t_span = time_range(
-        molniya.epoch - 1.5 * u.h, periods=num_samples, end=molniya.epoch + 1.5 * u.h
+        molniya.epoch, periods=num_samples, end=molniya.epoch + molniya.period.value * u.s
     )
 
 
