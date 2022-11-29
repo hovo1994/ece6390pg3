@@ -15,7 +15,7 @@ from poliastro.earth.plotting import GroundtrackPlotter
 from poliastro.util import time_range
 import matplotlib.pyplot   as     plt
 
-RADIUS_EARTH = 6380000 # KM
+RADIUS_EARTH = 6380000 # meters
 
 # NOTES: Use 
 
@@ -57,7 +57,7 @@ class SphericalCoordinates:
 
 class SatPosEpoch:
     """Compute Satellite Beam from position and frequency"""
-    def __init__(self, Position, lat, lon, freq=5.8e9, D_T=333):
+    def __init__(self, Position, lat, lon, freq=5.8e9, D_T=333):#meters
         self.Position = Position
         self.D_T = D_T
         self.freq = freq
@@ -90,8 +90,6 @@ def parseSamples(samples, lats, lons):
         sat_pos = SphericalCoordinates.from_cartesian(x, y, z)
         yield SatPosEpoch(sat_pos, lats[i], lons[i])
         i = i + 1
-
-
 
 def main(args):
     outputFile = args.output_file
