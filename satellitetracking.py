@@ -70,8 +70,8 @@ class SatPosEpoch:
         self.beamwidth = self.effective_beam_width(self.beam_radius, self.Position.altitude)
 
     def beam_radius_on_ground(self, altitude, lamb, D_T):
-        D_R = altitude * lamb/D_T
-        beam_radius = D_R/2
+        self.D_R = altitude * lamb/D_T
+        beam_radius = self.D_R/2
         return beam_radius
 
     def beam_area_on_ground(self, rad_beam):
@@ -80,8 +80,6 @@ class SatPosEpoch:
     def effective_beam_width(self, beam_radius, altitude):
         beamwidth = atan2(beam_radius, altitude)
         return beamwidth * 180/pi
-
-
 
 def parseSamples(samples, lats, lons):
     i = 0
@@ -152,7 +150,7 @@ def main(args):
         prev_lon = None
 
         # for Ground Track 
-        of.write(f"r{s}theta{s}phi{s}ground_track_beam_radius{s}ground_track_beam_area{s}v_r{s}v_theta{s}v_phi{s}beamwidth{s}v_groundtrack\n") #_theta{s}v_groundtrack_phi{s}v_relative_theta{s}v_relative_phi{s}v_lat{s}v_lon\n")
+        of.write(f"r{s}theta{s}phi{s}ground_track_beam_radius{s}ground_track_beam_area{s}v_r{s}v_theta{s}v_phi{s}beamwidth{s}v_groundtrack{s}recv_power_density\n") #_theta{s}v_groundtrack_phi{s}v_relative_theta{s}v_relative_phi{s}v_lat{s}v_lon\n")
         i = 0
         for samp in parseSamples(samples, lats, lons):
             if prev_r is None or prev_theta is None or prev_phi is None:
@@ -168,6 +166,7 @@ def main(args):
                 v_phi = (samp.Position.phi - prev_phi)/delta_t
                 # use lat and long to compute distance between cur samp and last samp
                 v_groundtrack = geopy.distance.geodesic((samp.lat, samp.lon), (prev_lat, prev_lon)).m /delta_t
+                recv_power_density = (pi * args.collected_power * args.efficiency)/(4 * samp.D_R**2)
                 of.write(f"{samp.Position.r}{s}"
                          f"{samp.Position.theta}{s}"
                          f"{samp.Position.phi}{s}"
@@ -177,7 +176,8 @@ def main(args):
                          f"{v_theta}{s}"
                          f"{v_phi}{s}"
                          f"{samp.beamwidth}{s}"
-                         f"{v_groundtrack}\n")
+                         f"{v_groundtrack}{s}"
+                         f"{recv_power_density}\n")
                 prev_r = samp.Position.r
                 prev_theta = samp.Position.theta
                 prev_phi = samp.Position.phi
@@ -194,6 +194,8 @@ if __name__ == '__main__':
                         description = 'Builds csv file of data for orbital characteristics calcs',
                         epilog = 'Todo add some help menus')
     parser.add_argument("-f", "--frequency", help="transmit frequency ", default=5.8e9)
+    parser.add_argument('-e', "--efficiency", help="total efficiency collector + conversion ", default=(0.6 * 0.6))
+    parser.add_argument('-w', "--collected_power", help ="collected power in watts", default=100000)
     parser.add_argument("-o", "--output_file", default='output.csv', help="output file name (csv format)")
 
     args = parser.parse_args()
