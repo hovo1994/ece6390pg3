@@ -75,7 +75,7 @@ class SatPosEpoch:
         return beam_radius
 
     def beam_area_on_ground(self, rad_beam):
-        return pi * rad_beam**2 
+        return pi * rad_beam**2
 
     def effective_beam_width(self, beam_radius, altitude):
         beamwidth = atan2(beam_radius, altitude)
@@ -148,8 +148,13 @@ def main(args):
         prev_lon = None
 
         # for Ground Track 
-        of.write(f"r{s}theta{s}phi{s}ground_track_beam_radius{s}ground_track_beam_area{s}v_r{s}v_theta{s}v_phi{s}beamwidth{s}v_groundtrack{s}recv_power_density\n") #_theta{s}v_groundtrack_phi{s}v_relative_theta{s}v_relative_phi{s}v_lat{s}v_lon\n")
+        of.write(f"r{s}theta{s}phi{s}ground_track_beam_radius{s}ground_track_beam_area{s}v_r{s}v_theta{s}v_phi{s}beamwidth{s}v_groundtrack{s}recv_power_density{s}time\n") #_theta{s}v_groundtrack_phi{s}v_relative_theta{s}v_relative_phi{s}v_lat{s}v_lon\n")
         i = 0
+        #initialize any arrays here
+        r_vec = []
+        t_vec = []
+        v_gt_vec = []
+        ratio_rad_gt_vec = []
         for samp in parseSamples(samples, lats, lons):
             if prev_r is None or prev_theta is None or prev_phi is None:
                 prev_r = samp.Position.r
@@ -165,6 +170,11 @@ def main(args):
                 # use lat and long to compute distance between cur samp and last samp
                 v_groundtrack = geopy.distance.geodesic((samp.lat, samp.lon), (prev_lat, prev_lon)).m /delta_t
                 recv_power_density = (pi * args.collected_power * args.efficiency)/(4 * samp.D_R**2)
+                # Store off any data you want to plot here. make sure it is inialized above. 
+                r_vec.append(samp.Position.r)
+                t_vec.append(i * delta_t)
+                v_gt_vec.append(v_groundtrack)
+                ratio_rad_gt_vec.append((samp.beam_radius*2)/v_groundtrack)
                 of.write(f"{samp.Position.r}{s}"
                          f"{samp.Position.theta}{s}"
                          f"{samp.Position.phi}{s}"
@@ -175,16 +185,27 @@ def main(args):
                          f"{v_phi}{s}"
                          f"{samp.beamwidth}{s}"
                          f"{v_groundtrack}{s}"
-                         f"{recv_power_density}\n")
+                         f"{recv_power_density}{s}" 
+                         f"{i*delta_t}\n")
                 prev_r = samp.Position.r
                 prev_theta = samp.Position.theta
                 prev_phi = samp.Position.phi
                 prev_lat = samp.lat
                 prev_lon = samp.lon
+                i = i+1
 
     
     # ORBIT
-    myplt = molniya.plot()
+    #myplt = molniya.plot()
+        if args.plot:
+            fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+            ax1.plot(t_vec, r_vec)
+            ax1.set_ylabel("Radius of Orbit (m)")
+            ax2.plot(t_vec, v_gt_vec)
+            ax2.set_ylabel("Groundtrack Velocity (m/sec)")
+            ax3.plot(t_vec, ratio_rad_gt_vec)
+            ax3.set_ylabel("Ratio of Beam Diameter to Groundtrack Velocity")
+            plt.show()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -195,6 +216,8 @@ if __name__ == '__main__':
     parser.add_argument('-e', "--efficiency", help="total efficiency collector + conversion ", default=(0.6 * 0.6))
     parser.add_argument('-w', "--collected_power", help ="collected power in watts", default=100000)
     parser.add_argument("-o", "--output_file", default='output.csv', help="output file name (csv format)")
+    parser.add_argument("-p", "--plot", action="store-true", default=False)
+
 
     args = parser.parse_args()
     main(args)
