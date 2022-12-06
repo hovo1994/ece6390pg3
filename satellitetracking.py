@@ -192,7 +192,7 @@ def main(args):
                 prev_phi = samp.Position.phi
                 prev_lat = samp.lat
                 prev_lon = samp.lon
-                i = i+1
+            i = i+1
 
     
     # ORBIT
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     parser.add_argument('-e', "--efficiency", help="total efficiency collector + conversion ", default=(0.6 * 0.6))
     parser.add_argument('-w', "--collected_power", help ="collected power in watts", default=100000)
     parser.add_argument("-o", "--output_file", default='output.csv', help="output file name (csv format)")
-    parser.add_argument("-p", "--plot", action="store-true", default=False)
+    parser.add_argument("-p", "--plot", action="store_true", default=False)
 
 
     args = parser.parse_args()
